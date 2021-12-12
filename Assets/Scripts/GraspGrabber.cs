@@ -53,7 +53,8 @@ public class GraspGrabber : Grabber
 
     private void XAButtonPress(InputAction.CallbackContext obj)
     {
-        buttonPress += 1;
+        //////////////UNCOMMENT IF WE NEED TO ADD FUNCTIONALITY TO ANOTHER BUTTON
+        // buttonPress += 1;
         // if odd number of presses, it's on. DEFAULT it is off.
         if (buttonPress % 2 == 1)
         {
@@ -89,37 +90,10 @@ public class GraspGrabber : Grabber
 
 
         mp_cube.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
-        // GOGO
+        // GOGO WONT HAPPENNNNNNNNNNNNNNNNNNNNN IGNOREEEEEEEEEEE
         if (buttonPress % 2 == 1)
         {
-
-            // make mp cube go invisible
-            mp_cube.transform.localScale = new Vector3(0, 0, 0);
-
-
-            // calculate distance between controller and headset
-            // IN LECTURE HE SAID WE COULD SET THE Y VALUE TO 0 AND CALL THE BUILT IN DISTANCE FUNCTION
-
-
-            Vector3 controller_parent = new Vector3(this.transform.parent.position.x, 0, this.transform.parent.position.z);
-            Vector3 headset = new Vector3(player_headset.transform.position.x, 0, player_headset.transform.position.z);
-            float distance = Vector3.Distance(controller_parent, headset);
-            // Debug.Log("Distance: " + distance); // 0.32 - 0.7
-
-            float d_threshold = 0.50f;
-
-            if (distance > d_threshold)
-            {
-
-                // IN LECTURE PROF SAID WE COULD DO DISTANCE - D / D * (SCALE_VAL), but I encapsulate in a power function because the graph of gogo slides said reach needs to be exponential
-                float scale = 13f;
-                float new_z = Mathf.Pow((distance - d_threshold) / d_threshold * scale, 2); // u want the distance - d_threshold to be as close to 0 as possible
-                this.transform.localPosition = new Vector3(0, 0, new_z); 
-            }
-            else
-            {
-                this.transform.localPosition = new Vector3(0, 0, 0);
-            }
+            Debug.Log("Error");
         }
         // Spindle
         else

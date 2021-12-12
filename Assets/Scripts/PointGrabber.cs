@@ -102,26 +102,6 @@ public class PointGrabber : Grabber
                 if (hit.collider.GetComponent<Grabbable>())
                 {
                     laserPointer.material = grabbablePointerMaterial;
-                    /*
-                    if (grabbedObject != null)
-                    {
-                        // THIS AINT IT bc aint going closer to user.It's just going back at whatever position it's at
-                        // QUESTIONS:
-
-                        // How to make object go towards camera(position) instead of arbitrary direction and incrementation
-                        // How to check for joystick command or button commands
-                        // 
-                        // if flick up, 
-                        // if flick down
-
-                        grabbedObject.transform.localPosition = new Vector3(grabbedObject.transform.position.x, grabbedObject.transform.position.y, grabbedObject.transform.position.z - 0.1f);
-                        // manipulate object using joystick
-                        // CHeck what direction joystick flicked
-                        //if (user flicked up)
-                        // grabbedObject.transform.position = new Vector3(grabbedObject.transform.position.x, grabbedObject.transform.position.y, grabbedObject.transform.position.z + 1)
-                        Debug.Log(grabbedObject); // name of object - SM_Toy_01 (5)
-                    }
-                    */
                 }
                 else
                 {
@@ -144,6 +124,7 @@ public class PointGrabber : Grabber
             // if ray hits a grabbable object
             if (hit.collider.GetComponent<Grabbable>())
             {
+                //Debug.Log(hit.collider.name);
                 grabPoint.localPosition = new Vector3(0, 0, hit.distance);
 
                 // if soemthing else is grabbing  that object, force it to release it.
@@ -153,6 +134,7 @@ public class PointGrabber : Grabber
                 }
 
                 grabbedObject = hit.collider.GetComponent<Grabbable>();
+                //Debug.Log(grabbedObject);
                 grabbedObject.SetCurrentGrabber(this);
 
                 // disregard physics when item is grabbed.
