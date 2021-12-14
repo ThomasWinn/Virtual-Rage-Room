@@ -21,6 +21,12 @@ public class HUDInteract : MonoBehaviour
     Material LineRedererMaterial;
     public Text strength_text;
 
+
+    // delete later
+    public GameObject cube;
+    public GameObject pt1;
+    public GameObject pt2;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +41,9 @@ public class HUDInteract : MonoBehaviour
 
     private void push(InputAction.CallbackContext obj)
     {
+        // cube.SetActive(false);
+        // pt1.SetActive(true);
+        // pt2.SetActive(true);
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity))
         {
