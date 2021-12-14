@@ -35,6 +35,7 @@ public class GraspGrabber : Grabber
     int[] thisVerticesList, otherVerticesList;
     // List<int> thisVerticesList, otherVerticesList;
 
+
     // Start is called before the first frame update
     void Start()
     {
@@ -61,7 +62,7 @@ public class GraspGrabber : Grabber
 
     private void XAButtonPress(InputAction.CallbackContext obj)
     {
-        buttonPress += 1;
+        /*buttonPress += 1;
         // if odd number of presses, it's on. DEFAULT it is off.
         if (buttonPress % 2 == 1)
         {
@@ -73,6 +74,8 @@ public class GraspGrabber : Grabber
             Debug.Log("GOGO - OFF");
             Debug.Log("SPINDLE - ON");
         }
+        */
+        grabbedObject.transform.rotation *= Quaternion.Euler(0, 0, 90);
     }
 
     private void OnDestroy()
@@ -97,122 +100,107 @@ public class GraspGrabber : Grabber
 
 
         mp_cube.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
-        // GOGO
-        if (buttonPress % 2 == 1)
+        
+        if (grabbedObject != null)
         {
+            // use line renderer to see spindle from user
 
-            // make mp cube go invisible
-            mp_cube.transform.localScale = new Vector3(0, 0, 0);
+            // set update recalculate spindle every frame and move object at that position = translation.
+            grabbedObject.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
+            // grabbedObject.transform.position = new Vector3(mid_point_x, 0, 0);
 
+            /*
+            // WILD GROWTH
 
-            // calculate distance between controller and headset
-            // IN LECTURE HE SAID WE COULD SET THE Y VALUE TO 0 AND CALL THE BUILT IN DISTANCE FUNCTION
+            // spindle_legnth = distance between the controllers
+            // want total distance rather than x distance
+            float current_spindle_length = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
+            // float current_spindle_length = other_controller.transform.position.x - this.transform.parent.position.x;
 
+            // spindle_length and previous spindle length ... current length / previous spindle length... % change
+            float change_ratio = current_spindle_length / previous_spindle_length; 
 
-            Vector3 controller_parent = new Vector3(this.transform.parent.position.x, 0, this.transform.parent.position.z);
-            Vector3 headset = new Vector3(player_headset.transform.position.x, 0, player_headset.transform.position.z);
-            float distance = Vector3.Distance(controller_parent, headset);
-            // Debug.Log("Distance: " + distance); // 0.32 - 0.7
+            // . Scale object by % change (obj.x * % change, obj.y * % change, obj.z * % change) . Then manipulate object scale transform
+            grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * change_ratio, grabbedObject.transform.localScale.y * change_ratio, grabbedObject.transform.localScale.z * change_ratio);
 
-            float d_threshold = 0.50f;
+            // update previous
+            previous_spindle_length = current_spindle_length;
+            */
 
-            if (distance > d_threshold)
+            // PROF CODE
+
+            Quaternion spindleRotation = Quaternion.LookRotation(other_controller.transform.position - this.transform.parent.position);
+
+            Quaternion rotationChange = spindleRotation * Quaternion.Inverse(LastSpindleRotation);
+
+            grabbedObject.transform.rotation = rotationChange * grabbedObject.transform.rotation;
+
+            LastSpindleRotation = spindleRotation;
+            float current_spindle_length = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
+            float change_ratio = current_spindle_length / previous_spindle_length;
+            float reverse_change_ratio = (previous_spindle_length / current_spindle_length);
+
+            previous_spindle_length = current_spindle_length;
+
+            for (int i = 0; i < thisVerticesList.Length; i++)
             {
-
-                // IN LECTURE PROF SAID WE COULD DO DISTANCE - D / D * (SCALE_VAL), but I encapsulate in a power function because the graph of gogo slides said reach needs to be exponential
-                float scale = 13f;
-                float new_z = Mathf.Pow((distance - d_threshold) / d_threshold * scale, 2); // u want the distance - d_threshold to be as close to 0 as possible
-                this.transform.localPosition = new Vector3(0, 0, new_z);
+                // Debug.Log(thisVerticesList[i]);
+                newVertices[thisVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[thisVerticesList[i]]);
             }
-            else
+            for (int i = 0; i < otherVerticesList.Length; i++)
             {
-                this.transform.localPosition = new Vector3(0, 0, 0);
+                // Debug.Log(thisVerticesList[i]);
+                newVertices[otherVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[otherVerticesList[i]]);
             }
-        }
-        // Spindle
-        else
-        {
-            if (grabbedObject != null)
+            // newVertices[this_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[this_index]);
+            // newVertices[other_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[other_index]);
+            // grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * reverse_change_ratio, grabbedObject.transform.localScale.y * reverse_change_ratio, grabbedObject.transform.localScale.z * reverse_change_ratio);
+
+            grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+
+            //Debug.Log("Current Spindle Length: " + current_spindle_length);
+            if (current_spindle_length >= 0.8 && grabbedObject.GetComponent<MeshRenderer>().enabled)
             {
-                // use line renderer to see spindle from user
-
-                // set update recalculate spindle every frame and move object at that position = translation.
-                grabbedObject.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
-                // grabbedObject.transform.position = new Vector3(mid_point_x, 0, 0);
-
-                /*
-                // WILD GROWTH
-
-                // spindle_legnth = distance between the controllers
-                // want total distance rather than x distance
-                float current_spindle_length = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
-                // float current_spindle_length = other_controller.transform.position.x - this.transform.parent.position.x;
-
-                // spindle_length and previous spindle length ... current length / previous spindle length... % change
-                float change_ratio = current_spindle_length / previous_spindle_length; 
-
-                // . Scale object by % change (obj.x * % change, obj.y * % change, obj.z * % change) . Then manipulate object scale transform
-                grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * change_ratio, grabbedObject.transform.localScale.y * change_ratio, grabbedObject.transform.localScale.z * change_ratio);
-
-                // update previous
-                previous_spindle_length = current_spindle_length;
-                */
-
-                // PROF CODE
-
-                Quaternion spindleRotation = Quaternion.LookRotation(other_controller.transform.position - this.transform.parent.position);
-
-                Quaternion rotationChange = spindleRotation * Quaternion.Inverse(LastSpindleRotation);
-
-                grabbedObject.transform.rotation = rotationChange * grabbedObject.transform.rotation;
-
-                LastSpindleRotation = spindleRotation;
-                float current_spindle_length = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
-                float change_ratio = current_spindle_length / previous_spindle_length;
-                float reverse_change_ratio = (previous_spindle_length / current_spindle_length);
-
-                previous_spindle_length = current_spindle_length;
-
-                for (int i = 0; i < thisVerticesList.Length; i++)
+                grabbedObject.GetComponent<MeshRenderer>().enabled = false;
+                //grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+                
+                if (grabbedObject.transform.childCount > 0)
                 {
-                    // Debug.Log(thisVerticesList[i]);
-                    newVertices[thisVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[thisVerticesList[i]]);
+                    //Debug.Log(grabbedObject.transform.childCount);
+                    for (int i = 0; i < grabbedObject.transform.childCount; i++)
+                    {
+                        Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
+                        grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
+                        // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
+                        // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+                    }
                 }
-                for (int i = 0; i < otherVerticesList.Length; i++)
-                {
-                    // Debug.Log(thisVerticesList[i]);
-                    newVertices[otherVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[otherVerticesList[i]]);
-                }
-                // newVertices[this_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[this_index]);
-                // newVertices[other_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[other_index]);
-                // grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * reverse_change_ratio, grabbedObject.transform.localScale.y * reverse_change_ratio, grabbedObject.transform.localScale.z * reverse_change_ratio);
+                
+            } 
 
-                grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+            // first time flag just_grabbed = 1
+            // int this_index = -1;
+            // int other_index = -1;
+            // float this_min_distance = 100000;
+            // float other_min_distance = 100000;
+            // for (int i = 0; i < newVertices.Length; i++) {
+            //     float this_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
+            //     float other_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
+            //     if (this_distance < this_min_distance)
+            //     {
+            //         this_min_distance = this_distance;
+            //         this_index = i;
+            //     }
+            //     if (other_distance < other_min_distance)
+            //     {
+            //         other_min_distance = other_distance;
+            //         other_index = i;
+            //     }
+            // }
+            // newVertices[this_index] = new Vector3(5,5,5);
+            // newVertices[other_index] = new Vector3(5,5,5);
 
-                // first time flag just_grabbed = 1
-                // int this_index = -1;
-                // int other_index = -1;
-                // float this_min_distance = 100000;
-                // float other_min_distance = 100000;
-                // for (int i = 0; i < newVertices.Length; i++) {
-                //     float this_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
-                //     float other_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
-                //     if (this_distance < this_min_distance)
-                //     {
-                //         this_min_distance = this_distance;
-                //         this_index = i;
-                //     }
-                //     if (other_distance < other_min_distance)
-                //     {
-                //         other_min_distance = other_distance;
-                //         other_index = i;
-                //     }
-                // }
-                // newVertices[this_index] = new Vector3(5,5,5);
-                // newVertices[other_index] = new Vector3(5,5,5);
-
-                // grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
-            }
+            // grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
         }
     }
 
@@ -246,12 +234,12 @@ public class GraspGrabber : Grabber
 
             grabbedObject.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
 
-            Debug.Log(grabbedObject.transform.position);
-            Debug.Log(this.transform.position);
-            Debug.Log(other_controller.transform.position);
+            //Debug.Log(grabbedObject.transform.position);
+            //Debug.Log(this.transform.position);
+            //Debug.Log(other_controller.transform.position);
 
 
-            Debug.Log(grabbedObject);
+            //Debug.Log(grabbedObject);
             deformingMesh = grabbedObject.GetComponent<MeshFilter>().mesh;
             originalVertices = deformingMesh.vertices;
             newVertices = new Vector3[originalVertices.Length];
