@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class GraspGrabber : Grabber
 {
@@ -26,6 +27,14 @@ public class GraspGrabber : Grabber
     float previous_spindle_length;
 
     private Quaternion LastSpindleRotation;
+    int this_index = -1;
+    int other_index = -1;
+
+    Mesh deformingMesh;
+	Vector3[] originalVertices, newVertices, worldSpaceVertices;
+    int[] thisVerticesList, otherVerticesList;
+    // List<int> thisVerticesList, otherVerticesList;
+    public GameObject gumball;
 
     // Start is called before the first frame update
     void Start()
@@ -132,7 +141,7 @@ public class GraspGrabber : Grabber
                 grabbedObject.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
                 // grabbedObject.transform.position = new Vector3(mid_point_x, 0, 0);
 
-
+                /*
                 // WILD GROWTH
 
                 // spindle_legnth = distance between the controllers
@@ -141,13 +150,14 @@ public class GraspGrabber : Grabber
                 // float current_spindle_length = other_controller.transform.position.x - this.transform.parent.position.x;
 
                 // spindle_length and previous spindle length ... current length / previous spindle length... % change
-                float change_ratio = current_spindle_length / previous_spindle_length;
+                float change_ratio = current_spindle_length / previous_spindle_length; 
 
                 // . Scale object by % change (obj.x * % change, obj.y * % change, obj.z * % change) . Then manipulate object scale transform
                 grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * change_ratio, grabbedObject.transform.localScale.y * change_ratio, grabbedObject.transform.localScale.z * change_ratio);
 
                 // update previous
                 previous_spindle_length = current_spindle_length;
+                */
                 
                 // PROF CODE
 
@@ -158,6 +168,49 @@ public class GraspGrabber : Grabber
                 grabbedObject.transform.rotation = rotationChange * grabbedObject.transform.rotation;
 
                 LastSpindleRotation = spindleRotation;
+                float current_spindle_length = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
+                float change_ratio = current_spindle_length / previous_spindle_length;
+                float reverse_change_ratio = (previous_spindle_length / current_spindle_length);
+
+                previous_spindle_length = current_spindle_length;
+
+                for (int i = 0; i < thisVerticesList.Length; i++) {
+                    // Debug.Log(thisVerticesList[i]);
+                    newVertices[thisVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[thisVerticesList[i]]);
+                }
+                for (int i = 0; i < otherVerticesList.Length; i++) {
+                    // Debug.Log(thisVerticesList[i]);
+                    newVertices[otherVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[otherVerticesList[i]]);
+                }
+                // newVertices[this_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[this_index]);
+                // newVertices[other_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[other_index]);
+                grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * reverse_change_ratio, grabbedObject.transform.localScale.y * reverse_change_ratio, grabbedObject.transform.localScale.z * reverse_change_ratio);
+
+                grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+
+                // first time flag just_grabbed = 1
+                // int this_index = -1;
+                // int other_index = -1;
+                // float this_min_distance = 100000;
+                // float other_min_distance = 100000;
+                // for (int i = 0; i < newVertices.Length; i++) {
+                //     float this_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
+                //     float other_distance = Vector3.Distance(this.transform.parent.position, newVertices[i]);
+                //     if (this_distance < this_min_distance)
+                //     {
+                //         this_min_distance = this_distance;
+                //         this_index = i;
+                //     }
+                //     if (other_distance < other_min_distance)
+                //     {
+                //         other_min_distance = other_distance;
+                //         other_index = i;
+                //     }
+                // }
+                // newVertices[this_index] = new Vector3(5,5,5);
+                // newVertices[other_index] = new Vector3(5,5,5);
+
+                // grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
             }
         }
     }
@@ -170,6 +223,7 @@ public class GraspGrabber : Grabber
             {
                 currentObject.GetCurrentGrabber().Release(new InputAction.CallbackContext());
             }
+            Debug.Log(originalVertices);
 
             grabbedObject = currentObject;
             grabbedObject.SetCurrentGrabber(this);
@@ -184,6 +238,88 @@ public class GraspGrabber : Grabber
             {
                 grabbedObject.transform.parent = this.transform;
             }
+
+            float mid_point_x = (other_controller.transform.position.x + this.transform.parent.position.x) / 2;
+            float mid_point_y = (other_controller.transform.position.y + this.transform.parent.position.y) / 2;
+            float mid_point_z = (other_controller.transform.position.z + this.transform.parent.position.z) / 2; 
+
+            grabbedObject.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
+
+            Debug.Log(grabbedObject.transform.position);
+            Debug.Log(this.transform.position);
+            Debug.Log(other_controller.transform.position);
+
+
+            Debug.Log(grabbedObject);
+            deformingMesh = grabbedObject.GetComponent<MeshFilter>().mesh;
+            originalVertices = deformingMesh.vertices;
+            newVertices = new Vector3[originalVertices.Length];
+            worldSpaceVertices = new Vector3[originalVertices.Length];
+            for (int i = 0; i < originalVertices.Length; i++) {
+                worldSpaceVertices[i] = grabbedObject.transform.TransformPoint(originalVertices[i]);
+                newVertices[i] = originalVertices[i];
+            }
+            // newVertices[0] = new Vector3(5,5,5);
+            // grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+
+            float this_min_distance = 100000;
+            float other_min_distance = 100000;
+            for (int i = 0; i < worldSpaceVertices.Length; i++) {
+                // Debug.Log(this.transform.position);
+                // Debug.Log(other_controller.transform.position);
+                float this_distance = Vector3.Distance(this.transform.position, worldSpaceVertices[i]);
+                float other_distance = Vector3.Distance(other_controller.transform.position, worldSpaceVertices[i]);
+                if (this_distance < this_min_distance)
+                {
+                    this_min_distance = this_distance;
+                    this_index = i;
+                }
+                if (other_distance < other_min_distance)
+                {
+                    other_min_distance = other_distance;
+                    other_index = i;
+                }
+            }
+            Debug.Log(newVertices[this_index]);
+            Debug.Log(newVertices[other_index]);
+
+            List<int> thisIndexList = new List<int>();
+            List<int> otherIndexList = new List<int>();
+            int counter = 0;
+            for (int i = 0; i < worldSpaceVertices.Length; i++) {
+                // Debug.Log(this.transform.position);
+                // Debug.Log(other_controller.transform.position);
+                float this_distance = Vector3.Distance(worldSpaceVertices[this_index], worldSpaceVertices[i]);
+                float other_distance = Vector3.Distance(worldSpaceVertices[other_index], worldSpaceVertices[i]);
+                // Debug.Log(this_distance);
+                if (this_distance < 0.07)
+                {
+                    // Debug.Log("Test");
+                    thisIndexList.Add(i);
+                }
+                if (other_distance < 0.07)
+                {
+                    // Debug.Log("Test");
+                    otherIndexList.Add(i);
+                }
+            }
+            thisVerticesList = thisIndexList.ToArray();
+            otherVerticesList = otherIndexList.ToArray();
+
+            // for (int i = 0; i < thisVerticesList.Length; i++) {
+            //     Debug.Log(thisVerticesList[i]);
+            // }
+            Debug.Log(counter);
+
+
+            // newVertices[this_index] = Vector3.Scale(new Vector3(2, 2, 2), newVertices[this_index]);
+            // newVertices[other_index] = Vector3.Scale(new Vector3(2, 2, 2), newVertices[other_index]);
+
+            // grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+            Debug.Log(this_index);
+            Debug.Log(other_index);
+            Debug.Log(originalVertices.Length);
+
             // COMMENTED - want the controller independent from the grabbed object, so if I rotate my hand with the hand that grabbed the object, object won't rotate with controller rotation.
             // HE explained in class that the object shouldn't rotate if we rotate wrists.
             // grabbedObject.transform.parent = this.transform;
@@ -204,7 +340,9 @@ public class GraspGrabber : Grabber
                 grabbedObject.GetComponent<Rigidbody>().isKinematic = false;
                 grabbedObject.GetComponent<Rigidbody>().useGravity = true;
             }
-
+            grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(originalVertices);
+            this_index = -1;
+            other_index = -1;
             grabbedObject.SetCurrentGrabber(null);
             grabbedObject.transform.parent = null;
             grabbedObject = null;
