@@ -25,6 +25,7 @@ public class GraspGrabber : Grabber
     Transform grabPoint;
 
     float previous_spindle_length;
+    float starting_spindle_pos;
 
     private Quaternion LastSpindleRotation;
     int this_index = -1;
@@ -34,6 +35,13 @@ public class GraspGrabber : Grabber
     Vector3[] originalVertices, newVertices, worldSpaceVertices;
     int[] thisVerticesList, otherVerticesList;
     // List<int> thisVerticesList, otherVerticesList;
+
+    GameObject held_object;
+
+    float obj_elasticity;
+    int obj_strength;
+
+    int user_strength = 0;
 
 
     // Start is called before the first frame update
@@ -98,6 +106,9 @@ public class GraspGrabber : Grabber
         float mid_point_y = (other_controller.transform.position.y + this.transform.parent.position.y) / 2;
         float mid_point_z = (other_controller.transform.position.z + this.transform.parent.position.z) / 2;
 
+        user_strength = this.GetComponent<HUDInteract>().strength + (other_controller.GetComponentInChildren<HUDInteract>().strength - 1); 
+        // Debug.Log(user_strength);
+
 
         mp_cube.transform.position = new Vector3(mid_point_x, mid_point_y, mid_point_z);
         
@@ -141,41 +152,84 @@ public class GraspGrabber : Grabber
             float reverse_change_ratio = (previous_spindle_length / current_spindle_length);
 
             previous_spindle_length = current_spindle_length;
-
-            for (int i = 0; i < thisVerticesList.Length; i++)
+            if (current_spindle_length - starting_spindle_pos < obj_elasticity)
             {
-                // Debug.Log(thisVerticesList[i]);
-                newVertices[thisVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[thisVerticesList[i]]);
-            }
-            for (int i = 0; i < otherVerticesList.Length; i++)
-            {
-                // Debug.Log(thisVerticesList[i]);
-                newVertices[otherVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, 0, 0), newVertices[otherVerticesList[i]]);
+                for (int i = 0; i < thisVerticesList.Length; i++)
+                {
+                    // Debug.Log(thisVerticesList[i]);
+                    newVertices[thisVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[thisVerticesList[i]]);
+                }
+                for (int i = 0; i < otherVerticesList.Length; i++)
+                {
+                    // Debug.Log(thisVerticesList[i]);
+                    newVertices[otherVerticesList[i]] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[otherVerticesList[i]]);
+                }
+                grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
             }
             // newVertices[this_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[this_index]);
             // newVertices[other_index] = Vector3.Scale(new Vector3(change_ratio, change_ratio, change_ratio), newVertices[other_index]);
             // grabbedObject.transform.localScale = new Vector3(grabbedObject.transform.localScale.x * reverse_change_ratio, grabbedObject.transform.localScale.y * reverse_change_ratio, grabbedObject.transform.localScale.z * reverse_change_ratio);
 
-            grabbedObject.GetComponent<MeshFilter>().mesh.SetVertices(newVertices);
+            // Based on strength and elasticity values, ... high elasticity = gotta pull more to break, less elasticity = pull less.
+            // stength = affects change_ratio
 
             //Debug.Log("Current Spindle Length: " + current_spindle_length);
-            if (current_spindle_length >= 0.8 && grabbedObject.GetComponent<MeshRenderer>().enabled)
+            Debug.Log(current_spindle_length - starting_spindle_pos);
+            Debug.Log("obj_elasticity:" + obj_elasticity);
+            Debug.Log("user_strength: " + user_strength);
+            Debug.Log("obj_strenght: " + obj_strength);
+            if (current_spindle_length - starting_spindle_pos >= obj_elasticity && grabbedObject.GetComponent<MeshRenderer>().enabled)
             {
-                grabbedObject.GetComponent<MeshRenderer>().enabled = false;
-                //grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
-                
-                if (grabbedObject.transform.childCount > 0)
+                if (user_strength > obj_strength)
                 {
-                    //Debug.Log(grabbedObject.transform.childCount);
-                    for (int i = 0; i < grabbedObject.transform.childCount; i++)
+                    grabbedObject.GetComponent<MeshRenderer>().enabled = false;
+                    grabbedObject.GetComponent<BoxCollider>().enabled = false;
+                    //grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+
+                    if (grabbedObject.transform.childCount > 0)
                     {
-                        Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
-                        grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
-                        // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
-                        // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+                        if (this.name.Contains("left"))
+                        {
+                            for (int i = 0; i < grabbedObject.transform.childCount; i++)
+                            {
+                                Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
+                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
+                                if (i == 0)
+                                {
+                                    grabbedObject.transform.GetChild(i).position = this.transform.parent.position;
+                                }
+                                else
+                                {
+                                    grabbedObject.transform.GetChild(i).position = other_controller.transform.position;
+                                }
+                                // grabbedObject.transform.GetChild(i).position = this.transform.position;
+                                // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
+                                // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+                            }
+                        }
+                        // if right controller
+                        else if (this.name.Contains("right"))
+                        {
+                            //Debug.Log(grabbedObject.transform.childCount);
+                            for (int i = 0; i < grabbedObject.transform.childCount; i++)
+                            {
+                                Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
+                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
+                                if (i == 1)
+                                {
+                                    grabbedObject.transform.GetChild(i).position = this.transform.position;
+                                }
+                                else
+                                {
+                                    grabbedObject.transform.GetChild(i).position = other_controller.transform.position;
+                                }
+                                // grabbedObject.transform.GetChild(i).position = this.transform.position;
+                                // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
+                                // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
+                            }
+                        }
                     }
                 }
-                
             } 
 
             // first time flag just_grabbed = 1
@@ -238,6 +292,28 @@ public class GraspGrabber : Grabber
             //Debug.Log(this.transform.position);
             //Debug.Log(other_controller.transform.position);
 
+            // Get object elasticity
+            if (grabbedObject.gameObject.name.Contains("gum"))
+            {
+                held_object = grabbedObject.gameObject;
+                obj_elasticity = grabbedObject.gameObject.GetComponent<gum>().elasticity;
+                obj_strength = grabbedObject.gameObject.GetComponent<gum>().strength;
+            }
+            else if (grabbedObject.gameObject.name.Contains("rock"))
+            {
+                held_object = grabbedObject.gameObject;
+                obj_elasticity = grabbedObject.gameObject.GetComponent<rock>().elasticity;
+                obj_strength = grabbedObject.gameObject.GetComponent<rock>().strength;
+            }
+            else if (grabbedObject.gameObject.name.Contains("mushroom"))
+            {
+                held_object = grabbedObject.gameObject;
+                obj_elasticity = grabbedObject.gameObject.GetComponent<mushroom>().elasticity;
+                obj_strength = grabbedObject.gameObject.GetComponent<mushroom>().strength;
+            }
+
+            starting_spindle_pos = Vector3.Distance(other_controller.transform.position, this.transform.parent.position);
+            obj_elasticity = obj_elasticity / 15;
 
             //Debug.Log(grabbedObject);
             deformingMesh = grabbedObject.GetComponent<MeshFilter>().mesh;
@@ -284,12 +360,12 @@ public class GraspGrabber : Grabber
                 float this_distance = Vector3.Distance(worldSpaceVertices[this_index], worldSpaceVertices[i]);
                 float other_distance = Vector3.Distance(worldSpaceVertices[other_index], worldSpaceVertices[i]);
                 // Debug.Log(this_distance);
-                if (this_distance < 0.07)
+                if (this_distance < 0.03)
                 {
                     // Debug.Log("Test");
                     thisIndexList.Add(i);
                 }
-                if (other_distance < 0.07)
+                if (other_distance < 0.03)
                 {
                     // Debug.Log("Test");
                     otherIndexList.Add(i);

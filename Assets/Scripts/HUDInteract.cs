@@ -14,7 +14,7 @@ public class HUDInteract : MonoBehaviour
     public GameObject panel;
     //public GameObject panel_text;
     public Text panel_text;
-    public int strength = 5;
+    public int strength = 1;
 
     public LineRenderer laserPointer;
     public Material stat_boost_material;
@@ -90,17 +90,23 @@ public class HUDInteract : MonoBehaviour
                     panel.SetActive(true);
                     //panel_text.SetActive(true);
 
-                    if (hit.collider.name.Contains("Gum"))
+                    if (hit.collider.name.Contains("gum"))
                     {
-                        panel_text.text = "Item: Gum\nElasticity: 10";
+                        panel_text.text = "Item: Gum\nElasticity: 7\nStrength: 1";
+                        //string txt = "Item: " + hit.collider.GetComponent<gum>().name + "\nElasticity: " + hit.collider.GetComponent<gum>().elasticity.ToString() + "\nStrength: " + hit.collider.GetComponent<gum>().strength.ToString();
+                        //panel_text.text = txt;
                     }
-                    else if (hit.collider.name.Contains("Rock"))
+                    else if (hit.collider.name.Contains("rock"))
                     {
-                        panel_text.text = "Item: Rock\nElasticity: 0";
+                        panel_text.text = "Item: Rock\nElasticity: 1\nStrength: 8";
+                        //string txt = "Item: " + hit.collider.GetComponent<rock>().name + "\nElasticity: " + hit.collider.GetComponent<rock>().elasticity.ToString() + "\nStrength: " + hit.collider.GetComponent<rock>().strength.ToString();
+                        //panel_text.text = txt;
                     }
-                    else if (hit.collider.name.Contains("Plant"))
+                    else if (hit.collider.name.Contains("mushroom"))
                     {
-                        panel_text.text = "Item: Plant\nElasticity: 5";
+                        panel_text.text = "Item: Mushroom\nElasticity: 5\nStrength: 4";
+                        //string txt = "Item: " + hit.collider.GetComponent<mushroom>().name + "\nElasticity: " + hit.collider.GetComponent<mushroom>().elasticity.ToString() + "\nStrength: " + hit.collider.GetComponent<mushroom>().strength.ToString();
+                        //panel_text.text = txt;
                     }
                 }
                 else // if it doesn't hit anything hide the HUD stats
