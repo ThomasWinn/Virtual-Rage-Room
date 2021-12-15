@@ -193,7 +193,7 @@ public class GraspGrabber : Grabber
                             for (int i = 0; i < grabbedObject.transform.childCount; i++)
                             {
                                 Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
-                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
+                                // grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
                                 if (i == 0)
                                 {
                                     grabbedObject.transform.GetChild(i).position = this.transform.parent.position;
@@ -202,6 +202,7 @@ public class GraspGrabber : Grabber
                                 {
                                     grabbedObject.transform.GetChild(i).position = other_controller.transform.position;
                                 }
+                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
                                 // grabbedObject.transform.GetChild(i).position = this.transform.position;
                                 // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
                                 // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
@@ -214,7 +215,7 @@ public class GraspGrabber : Grabber
                             for (int i = 0; i < grabbedObject.transform.childCount; i++)
                             {
                                 Debug.Log(grabbedObject.transform.GetChild(i).gameObject.name);
-                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
+                                // grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
                                 if (i == 1)
                                 {
                                     grabbedObject.transform.GetChild(i).position = this.transform.position;
@@ -223,6 +224,7 @@ public class GraspGrabber : Grabber
                                 {
                                     grabbedObject.transform.GetChild(i).position = other_controller.transform.position;
                                 }
+                                grabbedObject.transform.GetChild(i).gameObject.SetActive(true);
                                 // grabbedObject.transform.GetChild(i).position = this.transform.position;
                                 // grabbedObject.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().enabled = true;
                                 // grabbedObject.transform.GetComponentInChildren<MeshRenderer>().enabled = true;
